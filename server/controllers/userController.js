@@ -1,6 +1,5 @@
 const userService = require('../services/userService');
 
-
 // Login user
 async function login(req, res) {
   const { email, password } = req.body;
@@ -37,11 +36,79 @@ async function register(req, res) {
     res.status(500).json({ error: error.message });
   }
 }
+
 // Get all users
 async function getUsers(req, res) {
   try {
     const users = await userService.getUsers();
     res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+// Get user profile by ID (public profile)
+async function getUserProfile(req, res) {
+  const { id } = req.params;
+  try {
+    const user = await userService.getUserProfile(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Obtener las publicaciones del usuario
+    const publications = await userService.getUserPublications(id);
+
+    // Parsear los seguidos y siguiendo para obtener conteos
+    const siguiendo = JSON.parse(user.siguiendo || '[]');
+    const seguidos = JSON.parse(user.seguidos || '[]');
+
+    const profileData = {
+      ...user,
+      publications,
+      seguidos_count: seguidos.length,
+      siguiendo_count: siguiendo.length,
+      publications_count: publications.length
+    };
+
+    res.json(profileData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+// Follow a user
+async function followUser(req, res) {
+  const { followedId } = req.body;
+  const { followerId } = req.params; // ID del usuario que quiere seguir
+
+  try {
+    if (parseInt(followerId) === parseInt(followedId)) {
+      return res.status(400).json({ error: 'No puedes seguirte a ti mismo' });
+    }
+
+    const result = await userService.followUser(parseInt(followerId), parseInt(followedId));
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+// Unfollow a user
+async function unfollowUser(req, res) {
+  const { followedId } = req.body;
+  const { followerId } = req.params; // ID del usuario que quiere dejar de seguir
+
+  try {
+    if (parseInt(followerId) === parseInt(followedId)) {
+      return res.status(400).json({ error: 'No puedes dejar de seguirte a ti mismo' });
+    }
+
+    const result = await userService.unfollowUser(parseInt(followerId), parseInt(followedId));
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -161,6 +228,9 @@ module.exports = {
   login,
   register,
   getUsers,
+  getUserProfile,
+  followUser,
+  unfollowUser,
   createUser,
   updateUser,
   deleteUser

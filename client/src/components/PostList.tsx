@@ -6,8 +6,7 @@ import { useAuth } from '../context/AuthContext';
 interface Usuario {
   id: number;
   usuario: string;
-  foto: string | null; // base64 DataURL
-  // otros campos si necesitas
+  foto: string | null;
 }
 
 interface Post {
@@ -18,7 +17,12 @@ interface Post {
   nombre_archivo: string | null;
 }
 
-function PostList() {
+// ✅ Nueva prop opcional para selección
+interface PostListProps {
+  onSeleccionar?: (id: number) => void;
+}
+
+function PostList({ onSeleccionar }: PostListProps) {
   const { posts } = usePost();
   const { users } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -56,15 +60,16 @@ function PostList() {
         const usuario = usuarios.find((u) => u.id === post.id_usuario);
 
         return (
-          <Publicacion
-            key = {post.id}
-            id_publicacion={post.id}
-            id_usuario={post.id_usuario}
-            descripcion={post.descripcion}
-            fecha={post.fecha}
-            nombre_archivo={post.nombre_archivo}
-            usuario={usuario}
-          />
+          <div key={post.id} onClick={() => onSeleccionar?.(post.id)}>
+            <Publicacion
+              id_publicacion={post.id}
+              id_usuario={post.id_usuario}
+              descripcion={post.descripcion}
+              fecha={post.fecha}
+              nombre_archivo={post.nombre_archivo}
+              usuario={usuario}
+            />
+          </div>
         );
       })}
     </div>
